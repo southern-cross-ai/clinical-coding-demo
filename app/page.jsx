@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Heart, Eye, BookOpen, MessageCircle, Download, FileText, Send, X, ChevronRight } from 'lucide-react';
 
-import ChatWithDocsScreen from './components/ChatWithDocsScreen.jsx'
-import CodingReferencesScreen from './components/CodingReferencesScreen.jsx'
-import EpisodeWorkspaceScreen from './components/EpisodeWorkspaceScreen.jsx'
-import ExportAuditScreen from './components/ExportAuditScreen.jsx'
-import OCRReviewScreen from './components/OCRReviewScreen.jsx'
+// Import all screen components (you'll need to copy these from the artifacts)
+import EpisodeWorkspaceScreen from './components/EpisodeWorkspaceScreen.jsx';
+import OCRReviewScreen from './components/OCRReviewScreen.jsx';
+import CodingReferencesScreen from './components/CodingReferencesScreen.jsx';
+import ChatWithDocsScreen from './components/ChatWithDocsScreen.jsx';
+import ExportAuditScreen from './components/ExportAuditScreen.jsx';
 
 const ClinicalCodingDemo = ({ onBackToMenu }) => {
   const [currentScreen, setCurrentScreen] = useState('workspace');
@@ -17,7 +18,7 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
 
-  // Patient data context
+  // Patient data context shared across all screens
   const [patientData] = useState({
     name: 'John Smith',
     id: 'MRN-789012',
@@ -64,63 +65,45 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
       name: 'Episode Workspace', 
       icon: FileText, 
       description: 'Main coding interface',
-      color: 'from-cyan-500 to-blue-600'
+      component: EpisodeWorkspaceScreen
     },
     { 
       id: 'ocr', 
       name: 'OCR Review', 
       icon: Eye, 
       description: 'Document transcription',
-      color: 'from-green-500 to-emerald-600'
+      component: OCRReviewScreen
     },
     { 
       id: 'references', 
       name: 'Coding References', 
       icon: BookOpen, 
       description: 'Standards & guidelines',
-      color: 'from-purple-500 to-indigo-600'
+      component: CodingReferencesScreen
     },
     { 
       id: 'chat', 
       name: 'Chat with Docs', 
       icon: MessageCircle, 
       description: 'Clinician communication',
-      color: 'from-amber-500 to-orange-600'
+      component: ChatWithDocsScreen
     },
     { 
       id: 'export', 
       name: 'Export & Audit', 
       icon: Download, 
       description: 'Final submission',
-      color: 'from-pink-500 to-rose-600'
+      component: ExportAuditScreen
     }
   ];
 
   const navigateToScreen = (screenId) => {
     setIsTransitioning(true);
-    renderActiveScreen(screenId);
     setTimeout(() => {
       setCurrentScreen(screenId);
       setIsTransitioning(false);
     }, 400);
   };
-
-  const renderActiveScreen = (screenId) => {
-    switch (screenId) {
-      case 'workspace':
-        return <EpisodeWorkspaceScreen />;
-      case 'ocr':
-        return <OCRReviewScreen />;
-      case 'references':
-        return <CodingReferencesScreen />;
-      case 'chat':
-        return <ChatWithDocsScreen />;
-      case 'export':
-        return <ExportAuditScreen />;
-      default:
-        return <EpisodeWorkspaceScreen />;
-    }
-  }
 
   const handleBackToMenu = () => {
     setIsTransitioning(true);
@@ -141,19 +124,8 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
     return screens.find(screen => screen.id === currentScreen);
   };
 
-  const getNextScreen = () => {
-    const currentIndex = screens.findIndex(screen => screen.id === currentScreen);
-    return currentIndex < screens.length - 1 ? screens[currentIndex + 1] : null;
-  };
-
-  const getPreviousScreen = () => {
-    const currentIndex = screens.findIndex(screen => screen.id === currentScreen);
-    return currentIndex > 0 ? screens[currentIndex - 1] : null;
-  };
-
   const currentScreenData = getCurrentScreen();
-  const nextScreen = getNextScreen();
-  const previousScreen = getPreviousScreen();
+  const CurrentScreenComponent = currentScreenData.component;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
@@ -200,6 +172,7 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
                 </h1>
                 <p className="text-cyan-300 flex items-center space-x-2">
                   <span>Healthcare • AI-Powered Medical Coding</span>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 </p>
               </div>
             </div>
@@ -315,49 +288,7 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
           </div>
         ) : (
           <div className={`h-full transition-all duration-500 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-      
-            <div className="h-full flex items-center justify-center p-6">
-              <div className="text-center max-w-2xl">
-                <div className={`w-24 h-24 bg-gradient-to-br ${currentScreenData.color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-cyan-500/30`}>
-                  <currentScreenData.icon className="w-12 h-12 text-white" />
-                </div>
-                
-                <h2 className="text-3xl font-bold text-white mb-4">{currentScreenData.name}</h2>
-                <p className="text-xl text-gray-300 mb-8">{currentScreenData.description}</p>
-
-              </div>
-            </div>
-            {renderActiveScreen(currentScreenData.id)}
-
-            <div className="h-full flex items-center justify-center p-6">
-              <div className="text-center max-w-2xl">
-
-                <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-600/50 rounded-lg p-8">                  
-                  <div className="flex items-center justify-center space-x-4">
-                    {previousScreen && (
-                      <button
-                        onClick={() => navigateToScreen(previousScreen.id)}
-                        className="flex items-center space-x-2 bg-gray-700/50 hover:bg-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Previous</span>
-                      </button>
-                    )}
-                    
-                    {nextScreen && (
-                      <button
-                        onClick={() => navigateToScreen(nextScreen.id)}
-                        className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-4 py-2 rounded-lg transition-all duration-200"
-                      >
-                        <span>Next</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            <CurrentScreenComponent />
           </div>
         )}
       </div>

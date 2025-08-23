@@ -96,34 +96,31 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
     }
   ];
 
-  const ChatWithDocs = () => ( ChatWithDocsScreen )
+  const navigateToScreen = (screenId) => {
+    setIsTransitioning(true);
+    renderActiveScreen(screenId);
+    setTimeout(() => {
+      setCurrentScreen(screenId);
+      setIsTransitioning(false);
+    }, 400);
+  };
 
   const renderActiveScreen = (screenId) => {
     switch (screenId) {
-      case 'Episode Workspace':
+      case 'workspace':
         return <EpisodeWorkspaceScreen />;
-      case 'OCR Review':
+      case 'ocr':
         return <OCRReviewScreen />;
-      case 'Coding References':
+      case 'references':
         return <CodingReferencesScreen />;
-      case 'Chat with Docs':
+      case 'chat':
         return <ChatWithDocsScreen />;
-      case 'Export & Audit':
+      case 'export':
         return <ExportAuditScreen />;
       default:
         return <EpisodeWorkspaceScreen />;
     }
-  };
-
-
-  const navigateToScreen = (screenId) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentScreen(screenId);
-      renderActiveScreen(screenId)
-      setIsTransitioning(false);
-    }, 400);
-  };
+  }
 
   const handleBackToMenu = () => {
     setIsTransitioning(true);

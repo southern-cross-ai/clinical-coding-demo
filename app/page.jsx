@@ -16,7 +16,10 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
   const [demoLoading, setDemoLoading] = useState(true);
   const [particles, setParticles] = useState([]);
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
+  const [chatInput, setChatInput] = useState(''); // Changed from chatMessage to chatInput
+  const [chatMessages, setChatMessages] = useState([]); // Add this for storing chat history
+  const [isTyping, setIsTyping] = useState(false); // Add this for typing indicator
+
 
   // Patient data context shared across all screens
   const [patientData] = useState({
@@ -113,12 +116,62 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
     }, 500);
   };
 
-  const handleChatSubmit = () => {
-    if (chatMessage.trim()) {
-      alert(`AI Clinical Assistant: "${chatMessage}"`);
-      setChatMessage('');
+  const handleChatSubmit = async () => {
+  if (!chatInput.trim()) return; // Now correctly references chatInput
+  
+  const userMessage = { type: 'user', message: chatInput };
+  setChatMessages(prev => [...prev, userMessage]);
+  const currentInput = chatInput;
+  setChatInput(''); // Clear the input
+  setIsTyping(true);
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a clinical research assistant...`
+          },
+          {
+            role: 'user',
+            content: currentInput
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
-  };
+
+    const data = await response.json();
+    const aiResponse = {
+      type: 'assistant',
+      message: data.choices[0].message.content
+    };
+    
+    setChatMessages(prev => [...prev, aiResponse]); // Fixed: was setChatMessage
+  } catch (error) {
+    console.error('Chat Error:', error);
+    
+    const errorResponse = {
+      type: 'assistant',
+      message: 'Sorry, I encountered an error. Please try again.'
+    };
+    
+    setChatMessages(prev => [...prev, errorResponse]); // Fixed: was setChatMessage
+  } finally {
+    setIsTyping(false);
+  }
+};
 
   const getCurrentScreen = () => {
     return screens.find(screen => screen.id === currentScreen);
@@ -314,14 +367,32 @@ const ClinicalCodingDemo = ({ onBackToMenu }) => {
               <div className="text-sm text-gray-300 bg-gray-700/50 rounded-lg p-3 mb-3">
                 <strong className="text-cyan-300">AI Assistant:</strong> I can help you with ICD-10-AM coding, ACHI procedures, and Australian coding standards. Ask me about specific diagnoses, procedures, or coding rules!
               </div>
+              
+              {/* Display chat messages */}
+              {chatMessages.map((msg, index) => (
+                <div key={index} className={`mb-3 p-3 rounded-lg text-sm ${
+                  msg.type === 'user' 
+                    ? 'bg-cyan-500/20 text-cyan-100 ml-4' 
+                    : 'bg-gray-700/50 text-gray-300 mr-4'
+                }`}>
+                  <strong className={msg.type === 'user' ? 'text-cyan-300' : 'text-blue-300'}>
+                    {msg.type === 'user' ? 'You:' : 'AI Assistant:'}
+                  </strong> {msg.message}
+                </div>
+              ))}
+              
+              {/* Typing indicator */}
+              {isTyping && (
+                <div className="text-sm text-gray-400 italic">AI Assistant is typing...</div>
+              )}
             </div>
             
             <div className="p-4 border-t border-gray-600/50">
               <div className="flex space-x-2">
                 <input
                   type="text"
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
+                  value={chatInput} // Changed from chatMessage to chatInput
+                  onChange={(e) => setChatInput(e.target.value)} // Changed from setChatInput to setChatInput
                   placeholder="Ask about coding standards..."
                   className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                   onKeyPress={(e) => e.key === 'Enter' && handleChatSubmit()}
